@@ -1,7 +1,7 @@
 <html>
 
 <!--
-  Adding Brandon Jones and Colin MacKenzie IV's gl-matrix library that provides easy to
+  Adding Brandon Jones and Colin MacKenzie IVs gl-matrix library that provides easy to
   use vector and matrix maths operations.  Source: https://github.com/toji/gl-matrix
 -->
 <script type="text/javascript" src="gl-matrix.js"></script>
@@ -29,7 +29,7 @@ let TransferFunctionIsDirty = true;
 //
 // var vertexSource = `
 // #version 300 es
-// 
+//
 // would not work as there is a \n after `
 //
 
@@ -40,7 +40,7 @@ let TransferFunctionIsDirty = true;
 // We are building a cube as a bounding box:
 //
 //           7---------------------6
-//          /|                    /|
+//           /|                    /|
 //         / |                   / |
 //        /  |                  /  |
 //       /   |                 /   |
@@ -141,7 +141,7 @@ const boundingBoxFragmentSource = `#version 300 es
 // fragment shader.
 //
 // We are building a screen-aligned quad:
-// 
+//
   // 3--------------------------2
   // |                          |
   // |                          |
@@ -149,7 +149,7 @@ const boundingBoxFragmentSource = `#version 300 es
   // |                          |
   // |                          |
   // 0--------------------------1
-  // 
+  //
   //  y
   //  ^
   //  |
@@ -276,6 +276,9 @@ const volumeRenderingFragmentSource = `#version 300 es
           //
           //   @TODO: Implement the front-to-back compositing here
           //
+          result.rgb = (1.0 - result.a) * color.rgb * color.a + result.rgb;
+          result.a = (1.0 - result.a) * color.a + result.a;
+          if(result.a >= 1.0) break;
 
 
 
@@ -285,7 +288,10 @@ const volumeRenderingFragmentSource = `#version 300 es
           //
           //   @TODO: Implement the first hitpoint compositing here
           //
-
+          if(color.a > 0.05){
+              result = color;
+              break;
+          }
 
 
 
@@ -296,9 +302,6 @@ const volumeRenderingFragmentSource = `#version 300 es
           //   @TODO: Implement the maximum-intensity projection here
           //
 
-
-
-
         }
       }
 
@@ -308,6 +311,7 @@ const volumeRenderingFragmentSource = `#version 300 es
 
     // If we get here, the while loop above terminated, so we are done with the ray, so
     // we can return the result
+
     return result;
   }
 
@@ -327,7 +331,7 @@ const volumeRenderingFragmentSource = `#version 300 es
     const int RenderTypeVolumeSlice = 5;
     const int RenderTypeVolumeSliceWithTransferFunction = 6;
 
-    // The values that are checked against here have to be synced with the renderVolume 
+    // The values that are checked against here have to be synced with the renderVolume
     if (renderType == RenderTypeVolumeRendering) {
       // Check for an early out. If the entry coordinate is the same as the exit
       // coordinate then our current pixel is missing the volume, so there is no need for
@@ -482,7 +486,7 @@ function updateTransferFunction(gl, transferFunction) {
   // For now, just create a linear ramp from 0 to 1. We start at the cutoff value and fill
   // the rest of the array
   for (let i = cutoff * 4; i < 256 * 4; i += 4) {
-    // convert i into a value [0, 256] and set it 
+    // convert i into a value [0, 256] and set it
     const it = i / 4;
     data[i] = 2 * it;
     data[i + 1] = it;
@@ -616,7 +620,7 @@ function renderVolume(gl, program, volumeTexture, entryTexture, exitTexture,
   // Bind the entry point texture
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, entryTexture);
-  
+
   gl.uniform1i(gl.getUniformLocation(program, "entryPoints"), 0);  // 0 == gl.TEXTURE0
 
   // Bind the exit point texture
@@ -759,7 +763,7 @@ async function main() {
   // We want to do linear interpolation with this texture
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
   // It shouldn't happen that we are accessing the texture outside the range, but these
-  // value need to be set in order to make OpenGL happy 
+  // value need to be set in order to make OpenGL happy
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
@@ -842,7 +846,7 @@ async function main() {
     // Convert it into an array buffer
     console.log(112, "Cast the blob into an array buffer");
     const data = await blob.arrayBuffer();
-    // From the available meta data for the pig.raw dataset I know that each voxel is 
+    // From the available meta data for the pig.raw dataset I know that each voxel is
     // 16 bit unsigned integer
     console.log(113, "Cast the array buffer into a Uint16 typed array");
     const typedData = new Uint16Array(data);
