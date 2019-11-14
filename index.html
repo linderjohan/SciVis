@@ -469,18 +469,39 @@ function updateTransferFunction(gl, transferFunction) {
   // relatively simple ramp with the first 50 values being set to 0 to reduce the noise in
   // the image.  The remainder of the ramp is just using different angles for the color
   // components
+
   const cutoff = 50;
-  const intensityInterval = document.getElementById("intensityInterval").value;
-  const redChannel = document.getElementById("redChannel").value;
-  const greenChannel = document.getElementById("greenChannel").value;
-  const blueChannel = document.getElementById("blueChannel").value;
-  const alphaChannel = document.getElementById("alphaChannel").value;
 
-  //const intensityMax = parseInt(intensityInterval) + 50;
-  // console.log(intensityMax);
-  let intensity = {min: parseInt(intensityInterval) - 10,
-                   max: parseInt(intensityInterval) + 10};
+  const interval = 20;
 
+  const intensities = [];
+  intensities.push({
+      min: parseInt(document.getElementById("redIntensityInterval").value) - interval,
+      max: parseInt(document.getElementById("redIntensityInterval").value) + interval,
+      redC: 255,
+      greenC: 0,
+      blueC: 0,
+      alphaC: parseInt(document.getElementById("redAlphaChannel").value)
+  });
+  intensities.push({
+      min: parseInt(document.getElementById("greenIntensityInterval").value) - interval,
+      max: parseInt(document.getElementById("greenIntensityInterval").value) + interval,
+      redC: 0,
+      greenC: 255,
+      blueC: 0,
+      alphaC: parseInt(document.getElementById("greenAlphaChannel").value)
+      });
+
+  intensities.push({
+      min: parseInt(document.getElementById("blueIntensityInterval").value) - interval,
+      max: parseInt(document.getElementById("blueIntensityInterval").value) + interval,
+      redC: 0,
+      greenC: 0,
+      blueC: 255,
+      alphaC: parseInt(document.getElementById("blueAlphaChannel").value)
+  });
+
+  console.log(intensities[1]);
 
   for (let i = 0; i < cutoff * 4; i += 4) {
     // Set RGBA all to 0
@@ -492,41 +513,29 @@ function updateTransferFunction(gl, transferFunction) {
 
   // For now, just create a linear ramp from 0 to 1. We start at the cutoff value and fill
   // the rest of the array
+
   for (let i = cutoff * 4; i < 256 * 4; i += 4) {
     // convert i into a value [0, 256] and set it
-    const it =  i / 4;
+    let it = i / 4;
+    let result = {red: 0, green: 0, blue: 0, alpha: 0};
 
-    if(it > intensity.min && it < intensity.max){
-      data[i] = redChannel;
-      data[i + 1] = greenChannel;
-      data[i + 2] = blueChannel;
-      data[i + 3] = alphaChannel;
+    intensities.map(item => {
+      //console.log(item);
+      if(it > item.min && it < item.max){
+        let a = item.alphaC/256;
+        result.red = result.red + item.redC;
+        result.green = result.green + item.greenC;
+        result.blue = result.blue + item.blueC;
+        result.alpha = result.alpha + item.alphaC;
+      }
+
+    });
+    if(result.alpha > 0.0) {
+      data[i] = result.red;
+      data[i + 1] = result.green;
+      data[i + 2] = result.blue;
+      data[i + 3] = result.alpha;
     }
-
-    // //Low intensities
-    // if(it < 64 + cutoff){
-    // data[i] = 255;
-    // data[i + 1] = 0;
-    // data[i + 2] = 0;
-    // data[i + 3] = 10;
-    // }
-    // //Mid intensities
-    // else if(it < 128 + cutoff){
-    //   data[i] = 0;
-    //   data[i + 1] = 255;
-    //   data[i + 2] = 0;
-    //   data[i + 3] = 10;
-    // }
-    // //High intensities
-    // else if(it < 192 + cutoff){
-    //   data[i] = 0;
-    //   data[i + 1] = 0;
-    //   data[i + 2] = 255;
-    //   data[i + 3] = 10;
-    // }
-
-
-
   }
 
   /// End of the provided transfer function
@@ -994,6 +1003,7 @@ async function main() {
 
     // We are done with the rendering, so it is by definition not dirty anymore
     RenderingIsDirty = false;
+    //triggerTransferFunctionUpdate();
   }
 
   // Request the first frame, thus starting the render loop
@@ -1038,11 +1048,18 @@ function postError(msg) {
       </svg>
 
       <h3> Transfer Function Parameters</h3>
-      <div>Intensity Interval: <input type="range" min="60" max="255" value="0" class="slider" id="intensityInterval" oninput="triggerTransferFunctionUpdate();"> </div>
-      <div>Red channel: <input type="range" min="0" max="255" value="255" class="slider" id="redChannel" oninput="triggerTransferFunctionUpdate();"> </div>
-      <div>Green channel: <input type="range" min="0" max="255" value="0" class="slider" id="greenChannel" oninput="triggerTransferFunctionUpdate();"> </div>
-      <div>Blue channel: <input type="range" min="0" max="255" value="0" class="slider" id="blueChannel" oninput="triggerTransferFunctionUpdate();"> </div>
-      <div>Alpha channel: <input type="range" min="0" max="255" value="100" class="slider" id="alphaChannel" oninput="triggerTransferFunctionUpdate();"> </div>
+      <div> <p style="font-weight:bold"> Red </p>
+        <div>Intensity Interval: <input type="range" min="60" max="255" value="0" class="slider" id="redIntensityInterval" oninput="triggerTransferFunctionUpdate();"> </div>
+        <div>Alpha channel: <input type="range" min="0" max="255" value="20" class="slider" id="redAlphaChannel" oninput="triggerTransferFunctionUpdate();"> </div>
+      </div>
+      <div> <p style="font-weight:bold"> Green </p>
+        <div>Intensity Interval: <input type="range" min="60" max="255" value="0" class="slider" id="greenIntensityInterval" oninput="triggerTransferFunctionUpdate();"> </div>
+        <div>Alpha channel: <input type="range" min="0" max="255" value="20" class="slider" id="greenAlphaChannel" oninput="triggerTransferFunctionUpdate();"> </div>
+      </div>
+      <div> <p style="font-weight:bold"> Blue </p>
+        <div>Intensity Interval: <input type="range" min="60" max="255" value="0" class="slider" id="blueIntensityInterval" oninput="triggerTransferFunctionUpdate();"> </div>
+        <div>Alpha channel: <input type="range" min="0" max="255" value="20" class="slider" id="blueAlphaChannel" oninput="triggerTransferFunctionUpdate();"> </div>
+      </div>
     </div>
   </div>
   <p>
