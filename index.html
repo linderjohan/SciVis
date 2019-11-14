@@ -236,6 +236,7 @@ const volumeRenderingFragmentSource = `#version 300 es
 
     // Actually compute tEnd
     float tEnd = length(rayDirection);
+    rayDirection = normalize(rayDirection);
 
     // The user gave us a step size along the ray, so we are using it here.  Every step
     // along the ray, we are incrementing t by tIncr and have a look at the sample
@@ -279,10 +280,6 @@ const volumeRenderingFragmentSource = `#version 300 es
           result.rgb = (1.0 - result.a) * color.rgb * color.a + result.rgb;
           result.a = (1.0 - result.a) * color.a + result.a;
           if(result.a >= 1.0) break;
-
-
-
-
         }
         else if (compositingMethod == CompositingMethodFirstHitPoint) {
           //
@@ -292,16 +289,14 @@ const volumeRenderingFragmentSource = `#version 300 es
               result = color;
               break;
           }
-
-
-
-
         }
         else if (compositingMethod == CompositingMethodMaximumIntensityProjection) {
           //
           //   @TODO: Implement the maximum-intensity projection here
           //
-
+          if(color.a > result.a){
+            result = color;
+          }
         }
       }
 
