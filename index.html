@@ -262,33 +262,34 @@ const volumeRenderingFragmentSource = `#version 300 es
       // access the pixel right in the center
       vec4 color = texture(transferFunction, vec2(value, 0.5));
 
-      // This line is a bit magic.  Basically, we want to prevent that the brightness of
-      // the resulting image that we generate depends on the stepSize the user chooses.
-      // Higher step size means more samples per pixel, so we need to reduce the impact
-      // of each sample to keep the overall pixel value roughly the same.  150 is a
-      // randomly chosen value to serve as a reference contribution
-      const float ReferenceSamplingInterval = 150.0;
-      color.a = 1.0 - pow(1.0 - color.a, tIncr * ReferenceSamplingInterval);
+
+
 
       // We only want to continue if the sample we are currently using actually has any
       // contribution.  If the alpha value is 0, it will not contribute anything, so skip
       if (color.a > 0.0) {
         if (compositingMethod == CompositingMethodFrontToBack) {
+          // This line is a bit magic.  Basically, we want to prevent that the brightness of
+          // the resulting image that we generate depends on the stepSize the user chooses.
+          // Higher step size means more samples per pixel, so we need to reduce the impact
+          // of each sample to keep the overall pixel value roughly the same.  150 is a
+          // randomly chosen value to serve as a reference contribution
+          const float ReferenceSamplingInterval = 150.0;
+          color.a = 1.0 - pow(1.0 - color.a, tIncr * ReferenceSamplingInterval);
+
           //
           //   @TODO: Implement the front-to-back compositing here
           //
           result.rgb = (1.0 - result.a) * color.rgb * color.a + result.rgb;
           result.a = (1.0 - result.a) * color.a + result.a;
-          if(result.a >= 1.0) break;
+
         }
         else if (compositingMethod == CompositingMethodFirstHitPoint) {
           //
           //   @TODO: Implement the first hitpoint compositing here
           //
-          if(color.a > 0.05){
-              result = color;
-              break;
-          }
+            result = color;
+            break;
         }
         else if (compositingMethod == CompositingMethodMaximumIntensityProjection) {
           //
@@ -469,6 +470,17 @@ function updateTransferFunction(gl, transferFunction) {
   // the image.  The remainder of the ramp is just using different angles for the color
   // components
   const cutoff = 50;
+  const intensityInterval = document.getElementById("intensityInterval").value;
+  const redChannel = document.getElementById("redChannel").value;
+  const greenChannel = document.getElementById("greenChannel").value;
+  const blueChannel = document.getElementById("blueChannel").value;
+  const alphaChannel = document.getElementById("alphaChannel").value;
+
+  //const intensityMax = parseInt(intensityInterval) + 50;
+  // console.log(intensityMax);
+  let intensity = {min: parseInt(intensityInterval) - 10,
+                   max: parseInt(intensityInterval) + 10};
+
 
   for (let i = 0; i < cutoff * 4; i += 4) {
     // Set RGBA all to 0
@@ -482,11 +494,39 @@ function updateTransferFunction(gl, transferFunction) {
   // the rest of the array
   for (let i = cutoff * 4; i < 256 * 4; i += 4) {
     // convert i into a value [0, 256] and set it
-    const it = i / 4;
-    data[i] = 2 * it;
-    data[i + 1] = it;
-    data[i + 2] = 3 * it;
-    data[i + 3] = it;
+    const it =  i / 4;
+
+    if(it > intensity.min && it < intensity.max){
+      data[i] = redChannel;
+      data[i + 1] = greenChannel;
+      data[i + 2] = blueChannel;
+      data[i + 3] = alphaChannel;
+    }
+
+    // //Low intensities
+    // if(it < 64 + cutoff){
+    // data[i] = 255;
+    // data[i + 1] = 0;
+    // data[i + 2] = 0;
+    // data[i + 3] = 10;
+    // }
+    // //Mid intensities
+    // else if(it < 128 + cutoff){
+    //   data[i] = 0;
+    //   data[i + 1] = 255;
+    //   data[i + 2] = 0;
+    //   data[i + 3] = 10;
+    // }
+    // //High intensities
+    // else if(it < 192 + cutoff){
+    //   data[i] = 0;
+    //   data[i + 1] = 0;
+    //   data[i + 2] = 255;
+    //   data[i + 3] = 10;
+    // }
+
+
+
   }
 
   /// End of the provided transfer function
@@ -941,6 +981,7 @@ async function main() {
 
     // Get the step size from the slider and rescale to get into a proper range
     const stepSize = 1.0 / document.getElementById("stepSize").value;
+    //console.log(stepSize);
     const compositing = document.querySelector('input[name="compositing"]:checked').value;
     const renderType = document.querySelector('input[name="debug-output"]:checked').value;
     renderVolume(gl, volumeRenderingProgram, volumeTexture, entryTexture, exitTexture,
@@ -989,10 +1030,21 @@ function postError(msg) {
 
 <body onload="main();">
   <p id="error"></p>
-  <canvas id="glCanvas" width="640" height="480"></canvas>
+  <div style="display: flex">
+    <canvas id="glCanvas" width="640" height="480"></canvas>
+    <div style="margin:20px">
+      <h3> Transfer Function Parameters</h3>
+      <div>Intensity Interval: <input type="range" min="60" max="255" value="0" class="slider" id="intensityInterval" oninput="triggerTransferFunctionUpdate();"> </div>
+      <div>Red channel: <input type="range" min="0" max="255" value="255" class="slider" id="redChannel" oninput="triggerTransferFunctionUpdate();"> </div>
+      <div>Green channel: <input type="range" min="0" max="255" value="0" class="slider" id="greenChannel" oninput="triggerTransferFunctionUpdate();"> </div>
+      <div>Blue channel: <input type="range" min="0" max="255" value="0" class="slider" id="blueChannel" oninput="triggerTransferFunctionUpdate();"> </div>
+      <div>Alpha channel: <input type="range" min="0" max="255" value="100" class="slider" id="alphaChannel" oninput="triggerTransferFunctionUpdate();"> </div>
+    </div>
+  </div>
   <p>
     Rendering parameters
     <div>Step size: <input type="range" min="10" max="10000" value="1000" class="slider" id="stepSize" oninput="triggerRendering();"> </div>
+
     <div>
       <div>Compositing method:</div>
       <div><input type="radio" name="compositing" value="ftb" onchange="triggerRendering();" checked>Front-to-back</div>
