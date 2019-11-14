@@ -732,6 +732,7 @@ async function main() {
   // Get the canvas object from the main document
   let canvas = document.querySelector("#glCanvas");
 
+
   // Get a WebGL 2.0 context from the canvas
   let gl = canvas.getContext("webgl2");
 
@@ -1032,7 +1033,10 @@ function postError(msg) {
   <p id="error"></p>
   <div style="display: flex">
     <canvas id="glCanvas" width="640" height="480"></canvas>
-    <div style="margin:20px">
+    <div id="node"style="margin:20px; border: 1px; border-color: black">
+      <svg id="svg" width="300px" height="300px">
+      </svg>
+
       <h3> Transfer Function Parameters</h3>
       <div>Intensity Interval: <input type="range" min="60" max="255" value="0" class="slider" id="intensityInterval" oninput="triggerTransferFunctionUpdate();"> </div>
       <div>Red channel: <input type="range" min="0" max="255" value="255" class="slider" id="redChannel" oninput="triggerTransferFunctionUpdate();"> </div>
