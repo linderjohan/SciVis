@@ -938,22 +938,44 @@ function postError(msg) {
   <div style="display: flex">
     <canvas id="glCanvas" width="640" height="480"></canvas>
     <div id="node"style="margin:20px; border: 1px; border-color: black">
-      <svg id="svg" width="300px" height="300px">
+      <svg id="svg" width="100%" height="300px">
       </svg>
 
       <h3> Transfer Function Parameters</h3>
-      <div> <p style="font-weight:bold"> Red </p>
-        <div>Intensity Interval: <input type="range" min="60" max="255" value="0" class="slider" id="redIntensityInterval" oninput="triggerTransferFunctionUpdate();"> </div>
-        <div>Alpha channel: <input type="range" min="0" max="255" value="20" class="slider" id="redAlphaChannel" oninput="triggerTransferFunctionUpdate();"> </div>
+
+      <div> <p style="font-weight:bold"> Color 1 </p>
+        <div class="color"> Color
+            <input type="number" name="r" min="0" max="255" value="255" oninput="triggerTransferFunctionUpdate();">
+            <input type="number" name="g" min="0" max="255" value="0" oninput="triggerTransferFunctionUpdate();">
+            <input type="number" name="b" min="0" max="255" value="0" oninput="triggerTransferFunctionUpdate();">
+        </div>
+        <div>Intensity Interval: <input type="range" min="60" max="255" value="150" class="intensityInterval" oninput="triggerTransferFunctionUpdate();"> </div>
+        <div>Alpha channel: <input type="range" min="0" max="255" value="20" class="alphaChannel" oninput="triggerTransferFunctionUpdate();"> </div>
+        <div>Width: <input type="range" min="0" max="255" value="20" class="width" oninput="triggerTransferFunctionUpdate();"> </div>
       </div>
-      <div> <p style="font-weight:bold"> Green </p>
-        <div>Intensity Interval: <input type="range" min="60" max="255" value="0" class="slider" id="greenIntensityInterval" oninput="triggerTransferFunctionUpdate();"> </div>
-        <div>Alpha channel: <input type="range" min="0" max="255" value="20" class="slider" id="greenAlphaChannel" oninput="triggerTransferFunctionUpdate();"> </div>
+
+      <div> <p style="font-weight:bold"> Color 2 </p>
+        <div class="color"> Color
+            <input type="number" name="r" min="0" max="255" value="0" oninput="triggerTransferFunctionUpdate();">
+            <input type="number" name="g" min="0" max="255" value="255" oninput="triggerTransferFunctionUpdate();">
+            <input type="number" name="b" min="0" max="255" value="0" oninput="triggerTransferFunctionUpdate();">
+        </div>
+        <div>Intensity Interval: <input type="range" min="60" max="255" value="80" class="intensityInterval" oninput="triggerTransferFunctionUpdate();"> </div>
+        <div>Alpha channel: <input type="range" min="0" max="255" value="80" class="alphaChannel" oninput="triggerTransferFunctionUpdate();"> </div>
+        <div>Width: <input type="range" min="0" max="255" value="20" class="width" oninput="triggerTransferFunctionUpdate();"> </div>
       </div>
-      <div> <p style="font-weight:bold"> Blue </p>
-        <div>Intensity Interval: <input type="range" min="60" max="255" value="0" class="slider" id="blueIntensityInterval" oninput="triggerTransferFunctionUpdate();"> </div>
-        <div>Alpha channel: <input type="range" min="0" max="255" value="20" class="slider" id="blueAlphaChannel" oninput="triggerTransferFunctionUpdate();"> </div>
+
+      <div> <p style="font-weight:bold"> Color 3 </p>
+        <div class="color"> Color
+            <input type="number" name="r" min="0" max="255" value="0" oninput="triggerTransferFunctionUpdate();">
+            <input type="number" name="g" min="0" max="255" value="0" oninput="triggerTransferFunctionUpdate();">
+            <input type="number" name="b" min="0" max="255" value="255" oninput="triggerTransferFunctionUpdate();">
+        </div>
+        <div>Intensity Interval: <input type="range" min="60" max="255" value="200" class="intensityInterval" oninput="triggerTransferFunctionUpdate();"> </div>
+        <div>Alpha channel: <input type="range" min="0" max="255" value="230" class="alphaChannel" oninput="triggerTransferFunctionUpdate();"> </div>
+        <div>Width: <input type="range" min="0" max="255" value="20" class="width" oninput="triggerTransferFunctionUpdate();"> </div>
       </div>
+
     </div>
   </div>
   <p>

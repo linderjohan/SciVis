@@ -30,34 +30,23 @@ function updateTransferFunction(gl, transferFunction) {
 
   const interval = 25;
 
+  let color = document.querySelectorAll(".color");
+  let intensityInterval = document.querySelectorAll(".intensityInterval");
+  let alphaChannel = document.querySelectorAll(".alphaChannel");
+  let width = document.querySelectorAll(".width");
+
   const intensities = [];
-  intensities.push({
-      min: parseInt(document.getElementById("redIntensityInterval").value) - interval,
-      max: parseInt(document.getElementById("redIntensityInterval").value) + interval,
-      redC: 255,
-      greenC: 0,
-      blueC: 0,
-      alphaC: parseInt(document.getElementById("redAlphaChannel").value)
+  intensityInterval.forEach((item, i) => {
+    intensities.push({
+      min: parseInt(item.value) - parseInt(width[i].value),
+      max: parseInt(item.value) + parseInt(width[i].value),
+      peak: parseInt(item.value),
+      redC: parseInt(color[i].childNodes[1].value),
+      greenC: parseInt(color[i].childNodes[3].value),
+      blueC: parseInt(color[i].childNodes[5].value),
+      alphaC: parseInt(alphaChannel[i].value),
+    });
   });
-  intensities.push({
-      min: parseInt(document.getElementById("greenIntensityInterval").value) - interval,
-      max: parseInt(document.getElementById("greenIntensityInterval").value) + interval,
-      redC: 0,
-      greenC: 255,
-      blueC: 0,
-      alphaC: parseInt(document.getElementById("greenAlphaChannel").value)
-      });
-
-  intensities.push({
-      min: parseInt(document.getElementById("blueIntensityInterval").value) - interval,
-      max: parseInt(document.getElementById("blueIntensityInterval").value) + interval,
-      redC: 0,
-      greenC: 0,
-      blueC: 255,
-      alphaC: parseInt(document.getElementById("blueAlphaChannel").value)
-  });
-
-  console.log(intensities[1]);
 
   for (let i = 0; i < cutoff * 4; i += 4) {
     // Set RGBA all to 0
@@ -69,20 +58,44 @@ function updateTransferFunction(gl, transferFunction) {
 
   // For now, just create a linear ramp from 0 to 1. We start at the cutoff value and fill
   // the rest of the array
+  const black = {
+      redC: 0,
+      greenC: 0,
+      blueC: 0,
+      alphaC: 0
+  };
 
   for (let i = cutoff * 4; i < 256 * 4; i += 4) {
     // convert i into a value [0, 256] and set it
     let it = i / 4;
     let result = {red: 0, green: 0, blue: 0, alpha: 0};
 
-    intensities.map(item => {
-      //console.log(item);
-      if(it > item.min && it < item.max){
-        let a = item.alphaC/256;
-        result.red = result.red + item.redC;
-        result.green = result.green + item.greenC;
-        result.blue = result.blue + item.blueC;
-        result.alpha = result.alpha + item.alphaC;
+    intensities.forEach(item => {
+      if(it > item.min && it < item.peak){
+        let width = item.peak - item.min;
+        let a = Math.abs(item.peak - it)/ width;
+        let b = Math.abs(it - item.min)/ width;
+
+        result.red = result.red + item.redC * b + black.redC * a;
+        result.green = result.green + item.greenC * b + black.greenC * a;
+        result.blue = result.blue + item.blueC * b + black.blueC * a;
+        result.alpha = result.alpha + item.alphaC * b + black.alphaC * a;
+      }
+      else if(it == item.peak){
+          result.red = result.red + item.redC;
+          result.green = result.green + item.greenC;
+          result.blue = result.blue + item.blueC;
+          result.alpha = result.alpha + item.alphaC;
+      }
+      else if(it < item.max && it > item.peak){
+          let width = item.max - item.peak;
+          let a = Math.abs(it - item.peak)/ width;
+          let b = Math.abs(item.max - it)/ width;
+
+          result.red = result.red + item.redC * b + black.redC * a;
+          result.green = result.green + item.greenC * b + black.greenC * a;
+          result.blue = result.blue + item.blueC * b + black.blueC * a;
+          result.alpha = result.alpha + item.alphaC * b + black.alphaC * a;
       }
 
     });
