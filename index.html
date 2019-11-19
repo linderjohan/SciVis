@@ -786,7 +786,12 @@ async function main() {
     const typedData = new Uint16Array(data);
     // Our volume renderer really likes 8 bit data, so let's convert it
     console.log(114, "Convert the array into a Uint8 array");
-    const convertedData = new Uint8Array(typedData)
+    const convertedData = new Uint8Array(typedData.length)
+    for (var i = 0; i < typedData.length; i++) {
+      // The range of the dataset is [0, 4096), so we need to convert that into
+      // [0, 256) manually
+      convertedData[i] = typedData[i] / 4096.0 * 256.0
+    }
 
     // The volume size also comes from the available meta data for the pig.raw
     // if you want to have a look at the metadata, the pig.dat contains that
