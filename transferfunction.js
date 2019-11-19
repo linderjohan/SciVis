@@ -1,3 +1,64 @@
+const currentPoint = null;
+
+function renderHistogram() {
+    //What data do we neeeeed
+    console.log("Works");
+}
+
+function resize() {
+  let canvas = document.getElementById("glCanvas");
+  let svg = document.getElementById("svg");
+  console.log(canvas.style);
+  canvas.style.width = window.clientWidth * 0.5 + "px";
+  svg.style.width = window.clientWidth * 0.5 + "px";
+}
+
+function renderSVG(intensities) {
+  const svg = document.getElementById("svg");
+  let svgChildren = [ ...svg.childNodes ];
+  svgChildren.forEach((item, i) => {
+    item.parentNode.removeChild(item);
+  });
+
+  intensities.forEach((item, i) => {
+    let line = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+    line.setAttribute("style", "fill: none; stroke: black; stroke-width: 3;");
+    line.setAttribute("points",
+      `
+        ${(item.min/255) * svg.clientWidth * 0.95}, ${svg.clientHeight - 7}
+        ${(item.peak/255) * svg.clientWidth * 0.95}, ${svg.clientHeight - item.alphaC * 0.95}
+        ${(item.max/255) * svg.clientWidth * 0.95}, ${svg.clientHeight - 7}
+      `
+    );
+    line.addEventListener("mousedown", () => {currentPoint = i;});
+    svg.appendChild(line);
+
+    let peakcircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    peakcircle.setAttribute("r", "7");
+    peakcircle.setAttribute("cx", (item.peak/255) * svg.clientWidth * 0.95);
+    peakcircle.setAttribute("cy", svg.clientHeight - item.alphaC * 0.95);
+    peakcircle.setAttribute("fill", `rgba(${item.redC}, ${item.greenC}, ${item.blueC}, ${1})`);
+    peakcircle.addEventListener("mousedown", () => {currentPoint = i;});
+    svg.appendChild(peakcircle);
+
+    let leftcircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    leftcircle.setAttribute("r", "7");
+    leftcircle.setAttribute("cx", (item.min/255) * svg.clientWidth * 0.95);
+    leftcircle.setAttribute("cy", svg.clientHeight - 7);
+    leftcircle.setAttribute("fill", "black");
+    leftcircle.addEventListener("mousedown", () => {currentPoint = i;});
+    svg.appendChild(leftcircle);
+
+    let rightcircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    rightcircle.setAttribute("r", "7");
+    rightcircle.setAttribute("cx", (item.max/255) * svg.clientWidth * 0.95);
+    rightcircle.setAttribute("cy", svg.clientHeight - 7);
+    rightcircle.setAttribute("fill", "black");
+    rightcircle.addEventListener("mousedown", () => {currentPoint = i;});
+    svg.appendChild(rightcircle);
+  });
+}
+
 // / This function is called when the transfer function texture on the GPU should be
 // / updated.  Whether the transfer function values are computed here or just retrieved
 // / from somewhere else is up to decide for the implementation.
@@ -25,6 +86,8 @@ function updateTransferFunction(gl, transferFunction) {
   // relatively simple ramp with the first 50 values being set to 0 to reduce the noise in
   // the image.  The remainder of the ramp is just using different angles for the color
   // components
+
+  window.addEventListener('resize', resize);
 
   const cutoff = 50;
 
@@ -71,33 +134,22 @@ function updateTransferFunction(gl, transferFunction) {
     let result = {red: 0, green: 0, blue: 0, alpha: 0};
 
     intensities.forEach(item => {
-      if(it > item.min && it < item.peak){
-        let width = item.peak - item.min;
-        let a = Math.abs(item.peak - it)/ width;
-        let b = Math.abs(it - item.min)/ width;
+        if(it == item.peak){
+            result.red = result.red + item.redC;
+            result.green = result.green + item.greenC;
+            result.blue = result.blue + item.blueC;
+            result.alpha = result.alpha + item.alphaC;
+        }
+        else if (it > item.min && it < item.max) {
+            let width = item.peak - item.min;
+            let a = Math.abs(item.peak - it) / width;
+            let b = Math.min(Math.abs(it - item.min), Math.abs(item.max - it)) / width;
 
-        result.red = result.red + item.redC * b + black.redC * a;
-        result.green = result.green + item.greenC * b + black.greenC * a;
-        result.blue = result.blue + item.blueC * b + black.blueC * a;
-        result.alpha = result.alpha + item.alphaC * b + black.alphaC * a;
-      }
-      else if(it == item.peak){
-          result.red = result.red + item.redC;
-          result.green = result.green + item.greenC;
-          result.blue = result.blue + item.blueC;
-          result.alpha = result.alpha + item.alphaC;
-      }
-      else if(it < item.max && it > item.peak){
-          let width = item.max - item.peak;
-          let a = Math.abs(it - item.peak)/ width;
-          let b = Math.abs(item.max - it)/ width;
-
-          result.red = result.red + item.redC * b + black.redC * a;
-          result.green = result.green + item.greenC * b + black.greenC * a;
-          result.blue = result.blue + item.blueC * b + black.blueC * a;
-          result.alpha = result.alpha + item.alphaC * b + black.alphaC * a;
-      }
-
+            result.red = result.red + item.redC * b + black.redC * a;
+            result.green = result.green + item.greenC * b + black.greenC * a;
+            result.blue = result.blue + item.blueC * b + black.blueC * a;
+            result.alpha = result.alpha + item.alphaC * b + black.alphaC * a;
+        }
     });
     if(result.alpha > 0.0) {
       data[i] = result.red;
@@ -106,6 +158,8 @@ function updateTransferFunction(gl, transferFunction) {
       data[i + 3] = result.alpha;
     }
   }
+
+  renderSVG(intensities);
 
   /// End of the provided transfer function
   ////////////////////////////////////////////////////////////////////////////////////////

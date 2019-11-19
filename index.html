@@ -793,6 +793,7 @@ async function main() {
       convertedData[i] = typedData[i] / 4096.0 * 256.0
     }
 
+
     // The volume size also comes from the available meta data for the pig.raw
     // if you want to have a look at the metadata, the pig.dat contains that
     const volumeSize = [ 512, 512, 134 ];
@@ -903,6 +904,9 @@ async function main() {
   // Request the first frame, thus starting the render loop
   console.log(116, "Trigger the initial rendering");
   requestAnimationFrame(internalRender);
+
+  console.log(118, "Draw histogram svg");
+  renderHistogram();
 }
 
 // This function has to be called in order to trigger a rerender.  Otherwise, we would
@@ -934,11 +938,27 @@ function postError(msg) {
 
 
 <body onload="main();">
+  <style>
+    svg {
+      border: 2px solid black;
+      border-radius: 5px;
+      background-color: #ededed;
+    }
+    circle {
+      cursor: pointer;
+    }
+    polyline {
+      cursor: pointer;
+    }
+  </style>
+
   <p id="error"></p>
   <div style="display: flex">
-    <canvas id="glCanvas" width="640" height="480"></canvas>
-    <div id="node"style="margin:20px; border: 1px; border-color: black">
-      <svg id="svg" width="100%" height="300px">
+    <div style="width: 50%;">
+      <canvas id="glCanvas" style="width: 100%;" height="400"></canvas>
+    </div>
+    <div id="node"style="width: 50%;padding:20px; border: 1px; border-color: black">
+      <svg id="svg" width="700" height="300">
       </svg>
 
       <h3> Transfer Function Parameters</h3>
