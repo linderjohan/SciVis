@@ -28,7 +28,7 @@ function updateTransferFunction(gl, transferFunction) {
 
   const cutoff = 50;
 
-  const interval = 5;
+  const interval = 25;
 
   const intensities = [];
   intensities.push({
