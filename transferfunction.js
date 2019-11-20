@@ -1,3 +1,10 @@
+const currentPoint = null;
+
+function renderHistogram() {
+    //What data do we neeeeed
+    console.log("Works");
+}
+
 function resize() {
   let canvas = document.getElementById("glCanvas");
   let svg = document.getElementById("svg");
@@ -8,18 +15,30 @@ function resize() {
 
 function renderSVG(intensities) {
   const svg = document.getElementById("svg");
-
-  let circles = svg.querySelectorAll("circle");
-  circles.forEach((item, i) => {
+  let svgChildren = [ ...svg.childNodes ];
+  svgChildren.forEach((item, i) => {
     item.parentNode.removeChild(item);
   });
 
   intensities.forEach((item, i) => {
+    let line = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+    line.setAttribute("style", "fill: none; stroke: black; stroke-width: 3;");
+    line.setAttribute("points",
+      `
+        ${(item.min/255) * svg.clientWidth * 0.95}, ${svg.clientHeight - 7}
+        ${(item.peak/255) * svg.clientWidth * 0.95}, ${svg.clientHeight - item.alphaC * 0.95}
+        ${(item.max/255) * svg.clientWidth * 0.95}, ${svg.clientHeight - 7}
+      `
+    );
+    line.addEventListener("mousedown", () => {currentPoint = i;});
+    svg.appendChild(line);
+
     let peakcircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
     peakcircle.setAttribute("r", "7");
     peakcircle.setAttribute("cx", (item.peak/255) * svg.clientWidth * 0.95);
     peakcircle.setAttribute("cy", svg.clientHeight - item.alphaC * 0.95);
     peakcircle.setAttribute("fill", `rgba(${item.redC}, ${item.greenC}, ${item.blueC}, ${1})`);
+    peakcircle.addEventListener("mousedown", () => {currentPoint = i;});
     svg.appendChild(peakcircle);
 
     let leftcircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
@@ -27,6 +46,7 @@ function renderSVG(intensities) {
     leftcircle.setAttribute("cx", (item.min/255) * svg.clientWidth * 0.95);
     leftcircle.setAttribute("cy", svg.clientHeight - 7);
     leftcircle.setAttribute("fill", "black");
+    leftcircle.addEventListener("mousedown", () => {currentPoint = i;});
     svg.appendChild(leftcircle);
 
     let rightcircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
@@ -34,6 +54,7 @@ function renderSVG(intensities) {
     rightcircle.setAttribute("cx", (item.max/255) * svg.clientWidth * 0.95);
     rightcircle.setAttribute("cy", svg.clientHeight - 7);
     rightcircle.setAttribute("fill", "black");
+    rightcircle.addEventListener("mousedown", () => {currentPoint = i;});
     svg.appendChild(rightcircle);
   });
 }
