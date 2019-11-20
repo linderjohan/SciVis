@@ -1,23 +1,68 @@
 const currentPoint = null;
+const CUTOFF = 35;
 
-function renderHistogram() {
+function renderHistogram(histogramData) {
     //What data do we neeeeed
-    console.log("Works");
+    //Max of histogram data is really big, lets normalize it with log and a magic number
+    histogramData = histogramData.map(item => Math.log(item/25));
+    let max = 0;
+    // let max = Math.max(...histogramData);
+
+    //Find the max, to normalize later. Skipping the CUTOFFs with noise
+    histogramData.map((item, index) => {
+        if(index >= CUTOFF && item > max) max = item;
+    });
+
+    //Get the svg element
+    const svg = document.getElementById("svg");
+
+    //Insert the first point, skipping the CUTOFFs
+    let points = (`${(CUTOFF/255) * svg.clientWidth * 0.95}, ${svg.clientHeight}`);
+
+    histogramData.forEach((item, index) => {
+        //Insert the rest of the points at the bottom
+        if(index > CUTOFF){
+            points = points + (`
+                                ${Math.round((index/255) * svg.clientWidth * 0.95)}, ${Math.round(svg.clientHeight - (item*255/max) * 0.95)}
+                            `);
+                            //This ugly but ye
+        }
+    });
+
+    //Last point so we can fill in under the graph
+    //Oklart varför jag gjort såhär men den kanske ska ändras någon gång eller något :ppppp
+    const lastPoint = {
+        x: svg.clientWidth * 0.95,
+        y: svg.clientHeight
+    }
+    //Add the last point
+    points = points + `${lastPoint.x}, ${lastPoint.y}`;
+
+    //Draw the line
+    let line = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+    line.setAttribute("style", "fill: rgb(250, 250, 250); stroke: rgb(150, 150, 150); stroke-width: 3;");
+    line.setAttribute("id", "histogram");
+    line.setAttribute("points", `${points}`);
+
+    svg.appendChild(line);
+
+
 }
 
 function resize() {
   let canvas = document.getElementById("glCanvas");
   let svg = document.getElementById("svg");
   console.log(canvas.style);
-  canvas.style.width = window.clientWidth * 0.5 + "px";
+  //canvas.width = window.clientWidth * 0.5 + "px";
   svg.style.width = window.clientWidth * 0.5 + "px";
 }
 
 function renderSVG(intensities) {
   const svg = document.getElementById("svg");
   let svgChildren = [ ...svg.childNodes ];
+
   svgChildren.forEach((item, i) => {
-    item.parentNode.removeChild(item);
+      if(item.id != "histogram" ) item.parentNode.removeChild(item);
   });
 
   intensities.forEach((item, i) => {
@@ -38,6 +83,7 @@ function renderSVG(intensities) {
     peakcircle.setAttribute("cx", (item.peak/255) * svg.clientWidth * 0.95);
     peakcircle.setAttribute("cy", svg.clientHeight - item.alphaC * 0.95);
     peakcircle.setAttribute("fill", `rgba(${item.redC}, ${item.greenC}, ${item.blueC}, ${1})`);
+    peakcircle.setAttribute("stroke", "black");
     peakcircle.addEventListener("mousedown", () => {currentPoint = i;});
     svg.appendChild(peakcircle);
 
@@ -76,8 +122,16 @@ function updateTransferFunction(gl, transferFunction) {
   // This data should, at the end of your code, contain the information for the transfer
   // function.  Each value is stored sequentially (RGBA,RGBA,RGBA,...) for 256 values,
   // which get mapped to [0, 1] by OpenGL
-  let data = new Uint8Array(256 * 4);
+  //let data = new Uint8Array(256 * 4);
+  let data = new Uint8Array(256*4).fill(0);
 
+  // for (let i = 0; i < CUTOFF * 4; i += 4) {
+  //   // Set RGBA all to 0
+  //   data[i] = 0;
+  //   data[i + 1] = 0;
+  //   data[i + 2] = 0;
+  //   data[i + 3] = 0;
+  // }
 
   ////////////////////////////////////////////////////////////////////////////////////////
   /// Beginning of the provided transfer function
@@ -88,10 +142,6 @@ function updateTransferFunction(gl, transferFunction) {
   // components
 
   window.addEventListener('resize', resize);
-
-  const cutoff = 50;
-
-  const interval = 25;
 
   let color = document.querySelectorAll(".color");
   let intensityInterval = document.querySelectorAll(".intensityInterval");
@@ -111,16 +161,7 @@ function updateTransferFunction(gl, transferFunction) {
     });
   });
 
-  for (let i = 0; i < cutoff * 4; i += 4) {
-    // Set RGBA all to 0
-    data[i] = 0;
-    data[i + 1] = 0;
-    data[i + 2] = 0;
-    data[i + 3] = 0;
-  }
-
-  // For now, just create a linear ramp from 0 to 1. We start at the cutoff value and fill
-  // the rest of the array
+  //Black color to interpolate to
   const black = {
       redC: 0,
       greenC: 0,
@@ -128,27 +169,29 @@ function updateTransferFunction(gl, transferFunction) {
       alphaC: 0
   };
 
-  for (let i = cutoff * 4; i < 256 * 4; i += 4) {
+  for (let i = CUTOFF * 4; i < 256 * 4; i += 4) {
     // convert i into a value [0, 256] and set it
     let it = i / 4;
     let result = {red: 0, green: 0, blue: 0, alpha: 0};
 
     intensities.forEach(item => {
-        if(it == item.peak){
-            result.red = result.red + item.redC;
-            result.green = result.green + item.greenC;
-            result.blue = result.blue + item.blueC;
-            result.alpha = result.alpha + item.alphaC;
-        }
-        else if (it > item.min && it < item.max) {
-            let width = item.peak - item.min;
-            let a = Math.abs(item.peak - it) / width;
-            let b = Math.min(Math.abs(it - item.min), Math.abs(item.max - it)) / width;
+        if(item.alphaC < 1.0) return;
 
-            result.red = result.red + item.redC * b + black.redC * a;
-            result.green = result.green + item.greenC * b + black.greenC * a;
-            result.blue = result.blue + item.blueC * b + black.blueC * a;
-            result.alpha = result.alpha + item.alphaC * b + black.alphaC * a;
+        if(it > item.min && it < item.max) {
+            let procentBlack, procentColor;
+            if(it == item.peak){
+                procentBlack = 0;
+                procentColor = 1;
+            }
+            else {
+                let width = item.peak - item.min;
+                procentBlack = Math.abs(item.peak - it) / width;
+                procentColor = Math.min(Math.abs(it - item.min), Math.abs(item.max - it)) / width;
+            }
+            result.red = result.red + item.redC * procentColor + black.redC * procentBlack;
+            result.green = result.green + item.greenC * procentColor + black.greenC * procentBlack;
+            result.blue = result.blue + item.blueC * procentColor + black.blueC * procentBlack;
+            result.alpha = result.alpha + item.alphaC * procentColor + black.alphaC * procentBlack;
         }
     });
     if(result.alpha > 0.0) {

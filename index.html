@@ -627,6 +627,8 @@ function renderVolume(gl, program, volumeTexture, entryTexture, exitTexture,
 /// rendering.  This function is marked as async as our 'fetch' request to get the volume
 /// data requires this.
 async function main() {
+
+    let allData;
   // Get the canvas object from the main document
   let canvas = document.querySelector("#glCanvas");
 
@@ -792,6 +794,7 @@ async function main() {
       // [0, 256) manually
       convertedData[i] = typedData[i] / 4096.0 * 256.0
     }
+    allData = convertedData;
 
 
     // The volume size also comes from the available meta data for the pig.raw
@@ -886,7 +889,6 @@ async function main() {
 
     // Get the step size from the slider and rescale to get into a proper range
     const stepSize = 1.0 / document.getElementById("stepSize").value;
-    //console.log(stepSize);
     const compositing = document.querySelector('input[name="compositing"]:checked').value;
     const renderType = document.querySelector('input[name="debug-output"]:checked').value;
     renderVolume(gl, volumeRenderingProgram, volumeTexture, entryTexture, exitTexture,
@@ -905,8 +907,15 @@ async function main() {
   console.log(116, "Trigger the initial rendering");
   requestAnimationFrame(internalRender);
 
+  //Empty array to counter each of the intensities
+  let intensityOccurences = Array(256).fill(0);
+  //Increment the counter for each intensity every time a intensity occurs
+  allData.forEach(item => {
+      intensityOccurences[item]++;
+  });
+ // console.log(intensityOccurences);
   console.log(118, "Draw histogram svg");
-  renderHistogram();
+  renderHistogram(intensityOccurences);
 }
 
 // This function has to be called in order to trigger a rerender.  Otherwise, we would
@@ -955,7 +964,37 @@ function postError(msg) {
   <p id="error"></p>
   <div style="display: flex">
     <div style="width: 50%;">
-      <canvas id="glCanvas" style="width: 100%;" height="400"></canvas>
+      <!-- <canvas id="glCanvas" style="width: 100%;" height="400"></canvas> -->
+      <canvas id="glCanvas" width="780" height="585"></canvas>
+
+      <p>
+        Rendering parameters
+        <div>Step size: <input type="range" min="10" max="10000" value="1000" class="slider" id="stepSize" oninput="triggerRendering();"> </div>
+
+        <div>
+          <div>Compositing method:</div>
+          <div><input type="radio" name="compositing" value="ftb" onchange="triggerRendering();" checked>Front-to-back</div>
+          <div><input type="radio" name="compositing" value="fhp" onchange="triggerRendering();">First hit-point</div>
+          <div><input type="radio" name="compositing" value="mip" onchange="triggerRendering();">Maximum-intensity projection</div>
+        </div>
+      </p>
+      <p>
+        Camera
+          <div> r: <input type="range" min="0" max="100" value="50" class="slider" id="camera-r" oninput="triggerRendering();"></div>
+          <div> phi: <input type="range" min="0" max="360" value="35" class="slider" id="camera-phi" oninput="triggerRendering();"></div>
+          <div> theta: <input type="range" min="1" max="180" value="65" class="slider" id="camera-theta" oninput="triggerRendering();"></div>
+      </p>
+      <p>
+        Debugging
+          <div>Rendering output:</div>
+          <div><input type="radio" name="debug-output" value="volume" onchange="triggerRendering();" checked>Volume Rendering</div>
+          <div><input type="radio" name="debug-output" value="entry" onchange="triggerRendering();">Entry Points</div>
+          <div><input type="radio" name="debug-output" value="exit" onchange="triggerRendering();">Exit Points</div>
+          <div><input type="radio" name="debug-output" value="direction" onchange="triggerRendering();">Ray direction</div>
+          <div><input type="radio" name="debug-output" value="transfer" onchange="triggerRendering();">Transfer Function</div>
+          <div><input type="radio" name="debug-output" value="slice" onchange="triggerRendering();">Volume Slice</div>
+          <div><input type="radio" name="debug-output" value="slice-transfer" onchange="triggerRendering();">Volume Slice with transfer function</div>
+      </p>
     </div>
     <div id="node"style="width: 50%;padding:20px; border: 1px; border-color: black">
       <svg id="svg" width="700" height="300">
@@ -963,69 +1002,42 @@ function postError(msg) {
 
       <h3> Transfer Function Parameters</h3>
 
-      <div> <p style="font-weight:bold"> Color 1 </p>
-        <div class="color"> Color
+      <div style="display: flex; flex-direction:column;"> <p style="font-weight:bold"> Color 1 </p>
+        <div class="color"> Color:
             <input type="number" name="r" min="0" max="255" value="255" oninput="triggerTransferFunctionUpdate();">
             <input type="number" name="g" min="0" max="255" value="0" oninput="triggerTransferFunctionUpdate();">
             <input type="number" name="b" min="0" max="255" value="0" oninput="triggerTransferFunctionUpdate();">
         </div>
-        <div>Intensity Interval: <input type="range" min="60" max="255" value="150" class="intensityInterval" oninput="triggerTransferFunctionUpdate();"> </div>
-        <div>Alpha channel: <input type="range" min="0" max="255" value="20" class="alphaChannel" oninput="triggerTransferFunctionUpdate();"> </div>
+        <div>Intensity Interval: <input type="range" min="35" max="255" value="180" class="intensityInterval" oninput="triggerTransferFunctionUpdate();"> </div>
+        <div>Alpha channel: <input type="range" min="0" max="255" value="50" class="alphaChannel" oninput="triggerTransferFunctionUpdate();"> </div>
         <div>Width: <input type="range" min="0" max="255" value="20" class="width" oninput="triggerTransferFunctionUpdate();"> </div>
       </div>
 
-      <div> <p style="font-weight:bold"> Color 2 </p>
-        <div class="color"> Color
+      <div style="display: flex; flex-direction:column;"> <p style="font-weight:bold"> Color 2 </p>
+        <div class="color"> Color:
             <input type="number" name="r" min="0" max="255" value="0" oninput="triggerTransferFunctionUpdate();">
             <input type="number" name="g" min="0" max="255" value="255" oninput="triggerTransferFunctionUpdate();">
             <input type="number" name="b" min="0" max="255" value="0" oninput="triggerTransferFunctionUpdate();">
         </div>
-        <div>Intensity Interval: <input type="range" min="60" max="255" value="80" class="intensityInterval" oninput="triggerTransferFunctionUpdate();"> </div>
-        <div>Alpha channel: <input type="range" min="0" max="255" value="80" class="alphaChannel" oninput="triggerTransferFunctionUpdate();"> </div>
+        <div>Intensity Interval: <input type="range" min="35" max="255" value="120" class="intensityInterval" oninput="triggerTransferFunctionUpdate();"> </div>
+        <div>Alpha channel: <input type="range" min="0" max="255" value="50" class="alphaChannel" oninput="triggerTransferFunctionUpdate();"> </div>
         <div>Width: <input type="range" min="0" max="255" value="20" class="width" oninput="triggerTransferFunctionUpdate();"> </div>
       </div>
 
-      <div> <p style="font-weight:bold"> Color 3 </p>
-        <div class="color"> Color
+      <div style="display: flex; flex-direction:column;"> <p style="font-weight:bold"> Color 3 </p>
+        <div class="color"> Color:
             <input type="number" name="r" min="0" max="255" value="0" oninput="triggerTransferFunctionUpdate();">
             <input type="number" name="g" min="0" max="255" value="0" oninput="triggerTransferFunctionUpdate();">
             <input type="number" name="b" min="0" max="255" value="255" oninput="triggerTransferFunctionUpdate();">
         </div>
-        <div>Intensity Interval: <input type="range" min="60" max="255" value="200" class="intensityInterval" oninput="triggerTransferFunctionUpdate();"> </div>
-        <div>Alpha channel: <input type="range" min="0" max="255" value="230" class="alphaChannel" oninput="triggerTransferFunctionUpdate();"> </div>
+        <div>Intensity Interval: <input type="range" min="35" max="255" value="60" class="intensityInterval" oninput="triggerTransferFunctionUpdate();"> </div>
+        <div>Alpha channel: <input type="range" min="0" max="255" value="50" class="alphaChannel" oninput="triggerTransferFunctionUpdate();"> </div>
         <div>Width: <input type="range" min="0" max="255" value="20" class="width" oninput="triggerTransferFunctionUpdate();"> </div>
       </div>
 
     </div>
   </div>
-  <p>
-    Rendering parameters
-    <div>Step size: <input type="range" min="10" max="10000" value="1000" class="slider" id="stepSize" oninput="triggerRendering();"> </div>
 
-    <div>
-      <div>Compositing method:</div>
-      <div><input type="radio" name="compositing" value="ftb" onchange="triggerRendering();" checked>Front-to-back</div>
-      <div><input type="radio" name="compositing" value="fhp" onchange="triggerRendering();">First hit-point</div>
-      <div><input type="radio" name="compositing" value="mip" onchange="triggerRendering();">Maximum-intensity projection</div>
-    </div>
-  </p>
-  <p>
-    Camera
-      <div> r: <input type="range" min="0" max="100" value="50" class="slider" id="camera-r" oninput="triggerRendering();"></div>
-      <div> phi: <input type="range" min="0" max="360" value="35" class="slider" id="camera-phi" oninput="triggerRendering();"></div>
-      <div> theta: <input type="range" min="1" max="180" value="65" class="slider" id="camera-theta" oninput="triggerRendering();"></div>
-  </p>
-  <p>
-    Debugging
-      <div>Rendering output:</div>
-      <div><input type="radio" name="debug-output" value="volume" onchange="triggerRendering();" checked>Volume Rendering</div>
-      <div><input type="radio" name="debug-output" value="entry" onchange="triggerRendering();">Entry Points</div>
-      <div><input type="radio" name="debug-output" value="exit" onchange="triggerRendering();">Exit Points</div>
-      <div><input type="radio" name="debug-output" value="direction" onchange="triggerRendering();">Ray direction</div>
-      <div><input type="radio" name="debug-output" value="transfer" onchange="triggerRendering();">Transfer Function</div>
-      <div><input type="radio" name="debug-output" value="slice" onchange="triggerRendering();">Volume Slice</div>
-      <div><input type="radio" name="debug-output" value="slice-transfer" onchange="triggerRendering();">Volume Slice with transfer function</div>
-  </p>
 
   <!--
     Add some UI elements here to modify the transfer function.  As mentioned above, you need to call the function 'triggerTransferFunctionUpdate' to trigger and update of the GPU representation of the transfer function texture.  If you don't call that function, no change will be visible.
