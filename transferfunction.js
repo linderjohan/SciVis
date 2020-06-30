@@ -4,7 +4,7 @@ const CUTOFF = 35;
 function renderHistogram(histogramData) {
     //What data do we neeeeed
     //Max of histogram data is really big, lets normalize it with log and a magic number
-    histogramData = histogramData.map(item => Math.log(item/25));
+    histogramData = histogramData.map(item => Math.log(item/2000));
     let max = 0;
     // let max = Math.max(...histogramData);
 
